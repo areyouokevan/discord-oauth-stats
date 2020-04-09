@@ -37,9 +37,24 @@ def make_session(token=None, state=None, scope=None):
         auto_refresh_url=TOKEN_URL,
         token_updater=token_updater)
 
+
 @app.route('/')
 def index():
     return render_template('index.html', message="Login with Discord")
+
+
+@app.route('/me')
+def me():
+    discord = make_session(token=session.get('oauth2_token'))
+    user = discord.get(API_BASE_URL + '/users/@me').json()
+    guilds = discord.get(API_BASE_URL + '/users/@me/guilds').json()
+    connections = discord.get(API_BASE_URL + '/users/@me/connections').json()
+
+    return render_template(
+        'profile.html',
+        username=f"Heyo {user['username']}#{user['discriminator']}!",
+        stats=f"You're in {len(guilds)} guilds and have {len(connections)} connections"
+    )
 
 
 @app.route('/api/auth/discord')
@@ -64,20 +79,6 @@ def callback():
         authorization_response=request.url)
     session['oauth2_token'] = token
     return redirect(url_for('.me'))
-
-
-@app.route('/me')
-def me():
-    discord = make_session(token=session.get('oauth2_token'))
-    user = discord.get(API_BASE_URL + '/users/@me').json()
-    guilds = discord.get(API_BASE_URL + '/users/@me/guilds').json()
-    connections = discord.get(API_BASE_URL + '/users/@me/connections').json()
-
-    return render_template(
-        'profile.html',
-        username=f"Heyo {user['username']}#{user['discriminator']}!",
-        stats=f"You're in {len(guilds)} guilds and have {len(connections)} connections"
-    )
 
 
 if __name__ == '__main__':
